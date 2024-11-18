@@ -2,6 +2,6 @@
 
 void main() {
     clear_screen();
-    char* line = "Hello World";
+    char* line = "Hello World!\n";
     print_string(line);
 }
