@@ -1,19 +1,20 @@
-#include "ports.h"
 #include "display.h"
+#include "ports.h"
+#include <stdint.h>
 
 void set_cursor(int offset) {
     offset /= 2;
-    port_byte_out(VGA_CTRL_REGISTER, VGA_OFFSET_HIGH);
-    port_byte_out(VGA_DATA_REGISTER, (unsigned char) (offset >> 8));
-    port_byte_out(VGA_CTRL_REGISTER, VGA_OFFSET_LOW);
-    port_byte_out(VGA_DATA_REGISTER, (unsigned char) (offset & 0xff));
+    port_byte_out(REG_SCREEN_CTRL, 14);
+    port_byte_out(REG_SCREEN_DATA, (unsigned char) (offset >> 8));
+    port_byte_out(REG_SCREEN_CTRL, 15);
+    port_byte_out(REG_SCREEN_DATA, (unsigned char) (offset & 0xff));
 }
 
 int get_cursor() {
-    port_byte_out(VGA_CTRL_REGISTER, VGA_OFFSET_HIGH);
-    int offset = port_byte_in(VGA_DATA_REGISTER) << 8;
-    port_byte_out(VGA_CTRL_REGISTER, VGA_OFFSET_LOW);
-    offset += port_byte_in(VGA_DATA_REGISTER);
+    port_byte_out(REG_SCREEN_CTRL, 14);
+    int offset = port_byte_in(REG_SCREEN_DATA) << 8; /* High byte: << 8 */
+    port_byte_out(REG_SCREEN_CTRL, 15);
+    offset += port_byte_in(REG_SCREEN_DATA);
     return offset * 2;
 }
 
@@ -30,7 +31,7 @@ int move_offset_to_new_line(int offset) {
 }
 
 void set_char_at_video_memory(char character, int offset) {
-    unsigned char *vidmem = (unsigned char *) VIDEO_ADDRESS;
+    uint8_t *vidmem = (uint8_t *) VIDEO_ADDRESS;
     vidmem[offset] = character;
     vidmem[offset + 1] = WHITE_ON_BLACK;
 }
@@ -44,8 +45,8 @@ void memory_copy(char *source, char *dest, int nbytes) {
 
 int scroll_ln(int offset) {
     memory_copy(
-            (char *) (get_offset(0, 1) + VIDEO_ADDRESS),
-            (char *) (get_offset(0, 0) + VIDEO_ADDRESS),
+            (uint8_t * )(get_offset(0, 1) + VIDEO_ADDRESS),
+            (uint8_t * )(get_offset(0, 0) + VIDEO_ADDRESS),
             MAX_COLS * (MAX_ROWS - 1) * 2
     );
 
@@ -56,6 +57,10 @@ int scroll_ln(int offset) {
     return offset - 2 * MAX_COLS;
 }
 
+/*
+ * TODO:
+ * - handle illegal offset (print error message somewhere)
+ */
 void print_string(char *string) {
     int offset = get_cursor();
     int i = 0;
@@ -74,10 +79,33 @@ void print_string(char *string) {
     set_cursor(offset);
 }
 
+void print_hex(uint8_t scancode) {
+    char hex_chars[] = "0123456789ABCDEF";
+    char hex_str[3];
+    hex_str[0] = hex_chars[scancode >> 4];  // High nibble
+    hex_str[1] = hex_chars[scancode & 0x0F]; // Low nibble
+    hex_str[2] = '\0'; // Null-terminate string
+    print_string(hex_str); // Print the hex string
+}
+
+void print_nl() {
+    int newOffset = move_offset_to_new_line(get_cursor());
+    if (newOffset >= MAX_ROWS * MAX_COLS * 2) {
+        newOffset = scroll_ln(newOffset);
+    }
+    set_cursor(newOffset);
+}
+
 void clear_screen() {
     int screen_size = MAX_COLS * MAX_ROWS;
     for (int i = 0; i < screen_size; ++i) {
         set_char_at_video_memory(' ', i * 2);
     }
     set_cursor(get_offset(0, 0));
+}
+
+void print_backspace() {
+    int newCursor = get_cursor() - 2;
+    set_char_at_video_memory(' ', newCursor);
+    set_cursor(newCursor);
 }
