@@ -1,6 +1,6 @@
+#include <stdint.h>
 #include "display.h"
 #include "ports.h"
-#include <stdint.h>
 
 void set_cursor(int offset) {
     offset /= 2;
