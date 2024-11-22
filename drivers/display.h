@@ -13,8 +13,6 @@
 /* Public kernel API */
 void print_string(char *string);
 
-void print_hex(uint8_t scancode);
-
 void print_nl();
 
 void clear_screen();

@@ -1,6 +1,8 @@
-#include <stdint.h>
 #include "display.h"
 #include "ports.h"
+#include <stdint.h>
+#include "../kernel/mem.h"
+#include "../kernel/util.h"
 
 void set_cursor(int offset) {
     offset /= 2;
@@ -36,15 +38,8 @@ void set_char_at_video_memory(char character, int offset) {
     vidmem[offset + 1] = WHITE_ON_BLACK;
 }
 
-void memory_copy(char *source, char *dest, int nbytes) {
-    int i;
-    for (i = 0; i < nbytes; i++) {
-        *(dest + i) = *(source + i);
-    }
-}
-
 int scroll_ln(int offset) {
-    memory_copy(
+    memcpy(
             (uint8_t * )(get_offset(0, 1) + VIDEO_ADDRESS),
             (uint8_t * )(get_offset(0, 0) + VIDEO_ADDRESS),
             MAX_COLS * (MAX_ROWS - 1) * 2

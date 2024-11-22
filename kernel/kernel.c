@@ -5,6 +5,9 @@
 #include "../drivers/keyboard.h"
 #include "../shell/shell.h"
 
+#include "util.h"
+#include "mem.h"
+
 void main() {
     clear_screen();
     print_string("Installing interrupt service routines (ISRs).\n");
@@ -17,11 +20,15 @@ void main() {
     uint32_t timer_frequency = 1000;
     init_timer(timer_frequency);
 
-    print_string("Initializing shell.\n");
-    init_shell();
 
     print_string("Initializing keyboard (IRQ 1).\n");
     init_keyboard();
+
+    print_string("Initializing dynamic memory.\n");
+    init_dynamic_mem();
+
+    print_string("Initializing shell.\n");
+    init_shell();
 
     clear_screen();
     print_string("Welcome to Pinux!\n");

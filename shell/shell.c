@@ -1,6 +1,7 @@
+#include "shell.h"
 #include "../drivers/display.h"
 #include "../kernel/util.h"
-#include "shell.h"
+#include "../kernel/test.h"
 
 shell_function_t c_shell = NULL;
 
@@ -21,6 +22,10 @@ void execute_command(char *command, command_result_t *result) {
         print_string(args);
     }
     else if (strcmp(command, "") == 0) {
+        result->code = 0;
+    }
+    else if (strcmp(command, "test") == 0) {
+        test_mem();
         result->code = 0;
     }
     else {
