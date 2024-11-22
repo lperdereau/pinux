@@ -13,6 +13,6 @@ void print_dynamic_node_size();
 
 void print_dynamic_mem();
 
-void *mem_alloc(size_t size);
+void *malloc(size_t size);
 
-void mem_free(void *p);
+void free(void *p);

@@ -85,7 +85,7 @@ void *find_best_mem_block(dynamic_mem_node_t *dynamic_mem, size_t size) {
     return best_mem_block;
 }
 
-void *mem_alloc(size_t size) {
+void *malloc(size_t size) {
     dynamic_mem_node_t *best_mem_block =
             (dynamic_mem_node_t *) find_best_mem_block(dynamic_mem_start, size);
 
@@ -147,7 +147,7 @@ void *merge_current_node_into_previous(dynamic_mem_node_t *current_mem_node) {
     }
 }
 
-void mem_free(void *p) {
+void free(void *p) {
     // move along, nothing to free here
     if (p == NULL_POINTER) {
         return;

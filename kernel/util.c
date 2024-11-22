@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include "mem.h"
 
-int string_length(char s[]) {
+int strlen(char s[]) {
     int i = 0;
     while (s[i] != '\0') ++i;
     return i;
@@ -9,7 +11,7 @@ int string_length(char s[]) {
 
 void reverse(char s[]) {
     int c, i, j;
-    for (i = 0, j = string_length(s)-1; i < j; i++, j--) {
+    for (i = 0, j = strlen(s)-1; i < j; i++, j--) {
         c = s[i];
         s[i] = s[j];
         s[j] = c;
@@ -17,7 +19,7 @@ void reverse(char s[]) {
 }
 
 void append(char s[], char n) {
-    int len = string_length(s);
+    int len = strlen(s);
     s[len] = n;
     s[len+1] = '\0';
 }
@@ -37,7 +39,7 @@ void int_to_string(int n, char str[]) {
 }
 
 void append_str(char s[], char n[]) {
-    int len = string_length(s);
+    int len = strlen(s);
     int i = 0;
     while (n[i] != '\0') {
         s[len + i] = n[i];
@@ -60,4 +62,38 @@ int strncmp(char s1[], char s2[], int n) {
         if (s1[i] == '\0') return 0;
     }
     return (i == n) ? 0 : s1[i] - s2[i];
+}
+
+char *strchr(const char *str, int c) {
+    while (*str != '\0') {
+        if (*str == (char)c) {
+            return (char *)str;
+        }
+        str++;
+    }
+
+    if (c == '\0') {
+        return (char *)str;
+    }
+
+    return NULL;
+}
+
+// strdup: Duplicate a string and return a pointer to the new string.
+char *strdup(char *s) {
+    size_t len = strlen(s);
+
+    char *copy = (char *)malloc(len + 1);
+
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    for (size_t i = 0; i < len; i++) {
+        copy[i] = s[i];
+    }
+
+    copy[len] = '\0';
+
+    return copy;
 }

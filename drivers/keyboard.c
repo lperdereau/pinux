@@ -76,7 +76,7 @@ bool skip_print(uint8_t scancode) {
 }
 
 bool backspace(char s[]) {
-    int len = string_length(s);
+    int len = strlen(s);
     if (len > 0) {
         s[len - 1] = '\0';
         return true;
