@@ -3,11 +3,10 @@
 #include "../cpu/timer.h"
 #include "../drivers/display.h"
 #include "../drivers/keyboard.h"
+#include "../shell/shell.h"
 
 void main() {
     clear_screen();
-    char* line = "Hello World!\n";
-    print_string(line);
     print_string("Installing interrupt service routines (ISRs).\n");
     isr_install();
 
@@ -18,6 +17,13 @@ void main() {
     uint32_t timer_frequency = 1000;
     init_timer(timer_frequency);
 
+    print_string("Initializing shell.\n");
+    init_shell();
+
     print_string("Initializing keyboard (IRQ 1).\n");
     init_keyboard();
+
+    clear_screen();
+    print_string("Welcome to Pinux!\n");
+    print_string("> ");
 }

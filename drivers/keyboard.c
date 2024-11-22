@@ -1,6 +1,7 @@
-#include "../kernel/utils.h"
+#include "../kernel/util.h"
 #include "../cpu/isr.h"
 #include "../cpu/timer.h"
+#include "../shell/shell.h"
 #include "keyboard.h"
 #include "ports.h"
 #include "display.h"
@@ -59,7 +60,7 @@ void check_control_keys(uint8_t scancode) {
     check_caps_lock(scancode);
 }
 
-char* get_letter(uint8_t scancode) {
+char get_letter(uint8_t scancode) {
     if (shift_pressed || caps_lock) {
         return sc_shifted_ascii[scancode];
     } else {
@@ -86,7 +87,7 @@ bool backspace(char s[]) {
 
 static void keyboard_callback(registers_t *regs) {
     uint8_t scancode = port_byte_in(0x60);
-    char* letter = get_letter(scancode);
+    char letter = get_letter(scancode);
 
     check_control_keys(scancode);
 
@@ -98,10 +99,11 @@ static void keyboard_callback(registers_t *regs) {
         }
     } else if (scancode == ENTER) {
         print_nl();
+        c_shell(key_buffer);
         key_buffer[0] = '\0';
     } else {
-        append_str(key_buffer, letter);
-        print_string(letter);
+        append(key_buffer, letter);
+        print_string((char[]){letter, '\0'});
     }
 }
 

@@ -2,13 +2,13 @@
 #include "idt.h"
 #include "../drivers/display.h"
 #include "../drivers/ports.h"
+#include "../kernel/util.h"
 
 isr_t interrupt_handlers[256];
 
 /* Can't do this with a loop because we need the address
  * of the function names */
 void isr_install() {
-    // internal ISRs
     set_idt_gate(0, (uint32_t) isr0);
     set_idt_gate(1, (uint32_t) isr1);
     set_idt_gate(2, (uint32_t) isr2);
@@ -42,24 +42,19 @@ void isr_install() {
     set_idt_gate(30, (uint32_t) isr30);
     set_idt_gate(31, (uint32_t) isr31);
 
-    // PIC remapping
-    // ICW1
+    // Remap the PIC
     port_byte_out(0x20, 0x11);
     port_byte_out(0xA0, 0x11);
-    // ICW2
     port_byte_out(0x21, 0x20);
     port_byte_out(0xA1, 0x28);
-    // ICW3
     port_byte_out(0x21, 0x04);
     port_byte_out(0xA1, 0x02);
-    // ICW4
     port_byte_out(0x21, 0x01);
     port_byte_out(0xA1, 0x01);
-    // OCW1
     port_byte_out(0x21, 0x0);
     port_byte_out(0xA1, 0x0);
 
-    // IRQ ISRs (primary PIC)
+    // Install the IRQs
     set_idt_gate(32, (uint32_t)irq0);
     set_idt_gate(33, (uint32_t)irq1);
     set_idt_gate(34, (uint32_t)irq2);
@@ -68,8 +63,6 @@ void isr_install() {
     set_idt_gate(37, (uint32_t)irq5);
     set_idt_gate(38, (uint32_t)irq6);
     set_idt_gate(39, (uint32_t)irq7);
-
-    // IRQ ISRs (secondary PIC)
     set_idt_gate(40, (uint32_t)irq8);
     set_idt_gate(41, (uint32_t)irq9);
     set_idt_gate(42, (uint32_t)irq10);
@@ -79,7 +72,7 @@ void isr_install() {
     set_idt_gate(46, (uint32_t)irq14);
     set_idt_gate(47, (uint32_t)irq15);
 
-    load_idt();
+    load_idt(); // Load with ASM
 }
 
 /* To print the message which defines every exception */
@@ -122,6 +115,11 @@ char *exception_messages[] = {
 };
 
 void isr_handler(registers_t *r) {
+    print_string("received interrupt: ");
+    char s[3];
+    int_to_string(r->int_no, s);
+    print_string(s);
+    print_nl();
     print_string(exception_messages[r->int_no]);
     print_nl();
 }
@@ -131,13 +129,15 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 }
 
 void irq_handler(registers_t *r) {
+    /* Handle the interrupt in a more modular way */
     if (interrupt_handlers[r->int_no] != 0) {
         isr_t handler = interrupt_handlers[r->int_no];
         handler(r);
     }
 
-    port_byte_out(0x20, 0x20); // primary EOI
-    if (r->int_no < 40) {
-        port_byte_out(0xA0, 0x20); // secondary EOI
+    // EOI
+    if (r->int_no >= 40) {
+        port_byte_out(0xA0, 0x20); /* follower */
     }
+    port_byte_out(0x20, 0x20); /* leader */
 }
