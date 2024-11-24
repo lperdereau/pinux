@@ -46,6 +46,7 @@ void execute_command(char *command, command_result_t *result) {
     }
     else if (strcmp(command, "test") == 0) {
         test_mem();
+        // scan_pci_devices();
         result->code = 0;
     }
     else {

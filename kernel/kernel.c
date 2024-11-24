@@ -3,6 +3,9 @@
 #include "../cpu/timer.h"
 #include "../drivers/display.h"
 #include "../drivers/keyboard.h"
+#include "../drivers/pci.h"
+#include "../drivers/net.h"
+#include "../drivers/virtio_net.h"
 #include "../shell/shell.h"
 
 #include "util.h"
@@ -27,10 +30,16 @@ void main() {
     print_string("Initializing dynamic memory.\n");
     init_dynamic_mem();
 
+    print_string("Initializing NIC.\n");
+    init_virtio_net();
+    // pci_scan();
+    // setup_network_device();
+    print_string("NIC Init.\n");
+
     print_string("Initializing shell.\n");
     init_shell();
 
-    clear_screen();
+    // clear_screen();
     print_string("Welcome to Pinux!\n");
     print_string("> ");
 }

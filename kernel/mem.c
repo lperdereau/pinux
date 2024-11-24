@@ -148,23 +148,17 @@ void *merge_current_node_into_previous(dynamic_mem_node_t *current_mem_node) {
 }
 
 void free(void *p) {
-    // move along, nothing to free here
     if (p == NULL_POINTER) {
         return;
     }
 
-    // get mem node associated with pointer
     dynamic_mem_node_t *current_mem_node = (dynamic_mem_node_t *) ((uint8_t *) p - DYNAMIC_MEM_NODE_SIZE);
 
-    // pointer we're trying to free was not dynamically allocated it seems
     if (current_mem_node == NULL_POINTER) {
         return;
     }
 
-    // mark block as unused
     current_mem_node->used = false;
-
-    // merge unused blocks
     current_mem_node = merge_next_node_into_current(current_mem_node);
     merge_current_node_into_previous(current_mem_node);
 }

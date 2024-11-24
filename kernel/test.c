@@ -1,39 +1,40 @@
 #include "mem.h"
-#include "../drivers/display.h"
+#include "print.h"
+// #include "../drivers/pci.h"
 
 void test_mem() {
-    print_string("init_dynamic_mem()\n");
+    printf("init_dynamic_mem()\n");
     print_dynamic_node_size();
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     int *ptr1 = malloc(5);
-    print_string("int *ptr1 = malloc(5)\n");
+    printf("int *ptr1 = malloc(5)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     int *ptr2 = malloc(10);
-    print_string("int *ptr2 = malloc(10)\n");
+    printf("int *ptr2 = malloc(10)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     free(ptr1);
-    print_string("free(ptr1)\n");
+    printf("free(ptr1)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     int *ptr3 = malloc(2);
-    print_string("int *ptr3 = malloc(2)\n");
+    printf("int *ptr3 = malloc(2)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     free(ptr2);
-    print_string("free(ptr2)\n");
+    printf("free(ptr2)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 
     free(ptr3);
-    print_string("free(ptr3)\n");
+    printf("free(ptr3)\n");
     print_dynamic_mem();
-    print_nl();
+    printf("\n");
 }
