@@ -6,6 +6,16 @@
 
 uint32_t tick = 0;
 
+void sleep_ms(unsigned long milliseconds) {
+    unsigned long start_time = clock();  // Capture the current time
+    unsigned long end_time = start_time + milliseconds;  // Calculate the target time
+
+    // Wait until the specified amount of time has passed
+    while (clock() < end_time) {
+        // You could add a small 'yield' or 'nop' here to reduce CPU usage if needed
+    }
+}
+
 uint32_t clock() {
     return tick;
 };
