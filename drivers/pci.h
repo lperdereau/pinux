@@ -10,8 +10,7 @@
 
 #define PIC_EOI          0x20  // End of Interrupt command
 
-// void get_mac_address();
-uint32_t *pci_map_bar(uint8_t bus, uint8_t slot, uint8_t bar_index, uint32_t size_of_mmio_region);
+uint32_t *pci_map_bar(uint8_t bus, uint8_t slot, uint8_t function, uint8_t bar_index, uint32_t size_of_mmio_region);
 void pic_acknowledge_irq(uint8_t irq);
 void pci_scan();
 void check_virtio_device(uint8_t bus, uint8_t slot, uint8_t function);

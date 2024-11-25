@@ -50,20 +50,25 @@ static void virtio_net_interrupt_handler(registers_t *regs) {
     }
 }
 
-void init_virtio_net() {
+#define PCI_ADDRESS(bus, slot, function, offset)  \
+    (0x80000000 | ((bus) << 16) | ((slot) << 11) | ((function) << 8) | ((offset) & 0xFC))
+
+virtio_net_device_t* init_virtio_net() {
     uint8_t bus = 0;   // Example bus number
     uint8_t slot = 3;  // Example slot number
     uint8_t function = 0;  // Example function number
 
-    check_virtio_device(bus, slot, function);
+    // check_virtio_device(bus, slot, function);
     // Scan PCI bus and initialize the Virtio device
-    // virtio_initialize_device(bus, slot, virtio_dev);  // Assuming you have the correct PCI bus/slot
+    virtio_initialize_device(bus, slot, function, VIRTIO_NET_PCI_DEVICE_ID, virtio_dev);  // Assuming you have the correct PCI bus/slot
 
     // // Initialize descriptor rings for receive and transmit
-    // virtio_alloc_desc_ring(&rx_ring, 128);
-    // virtio_alloc_desc_ring(&tx_ring, 128);
+    virtio_alloc_desc_ring(&rx_ring, 128);
+    virtio_alloc_desc_ring(&tx_ring, 128);
 
     // // Register the Virtio-net interrupt handler for IRQ9
-    // register_interrupt_handler(IRQ9, virtio_net_interrupt_handler);
-    // pic_acknowledge_irq(IRQ9);
+    register_interrupt_handler(IRQ9, virtio_net_interrupt_handler);
+    pic_acknowledge_irq(IRQ9);
+
+    return virtio_dev;
 }

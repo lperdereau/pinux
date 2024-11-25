@@ -126,7 +126,7 @@ int vsprintf(char *buf, const char *format, va_list args) {
             } else if (*format == 'u') {
                 // Print an unsigned integer
                 unsigned int num = va_arg(args, unsigned int);
-                i += hex_to_buffer(buf + i, num, width); // Pass width for padding
+                i += uint_to_buffer(buf + i, num); // Pass width for padding
             } else if (*format == 'x') {
                 // Print a hexadecimal number with width handling
                 unsigned int num = va_arg(args, unsigned int);

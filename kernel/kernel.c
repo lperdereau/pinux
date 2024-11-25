@@ -1,12 +1,13 @@
+#include "net.h"
 #include "../cpu/idt.h"
 #include "../cpu/isr.h"
 #include "../cpu/timer.h"
 #include "../drivers/display.h"
 #include "../drivers/keyboard.h"
 #include "../drivers/pci.h"
-#include "../drivers/net.h"
 #include "../drivers/virtio_net.h"
 #include "../shell/shell.h"
+
 
 #include "util.h"
 #include "mem.h"
@@ -31,9 +32,12 @@ void main() {
     init_dynamic_mem();
 
     print_string("Initializing NIC.\n");
-    init_virtio_net();
-    // pci_scan();
-    // setup_network_device();
+    virtio_net_device_t* dev = init_virtio_net();
+    struct net_device device;
+    device.name = "eth0";
+    memcpy(device.mac_addr, dev->mac_addr, sizeof(device.mac_addr));
+
+    setup_network_device(dev);
     print_string("NIC Init.\n");
 
     print_string("Initializing shell.\n");

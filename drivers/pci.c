@@ -6,33 +6,6 @@
 #include "../kernel/util.h"
 
 
-// Function to read a 32-bit value from a PCI configuration register
-// uint32_t pci_read_config(uint8_t bus, uint8_t slot, uint8_t function, uint8_t offset) {
-//     uint32_t address;
-
-//     // Construct the configuration address
-//     address = (0x80000000) |          // Set bit 31 to 1 to indicate configuration access
-//               (bus << 16) |          // Bus number (8 bits)
-//               (slot << 11) |        // Slot number (5 bits)
-//               (function << 8) |     // Function number (3 bits)
-//               (offset & 0xFC);      // Register offset (select 8-bit aligned registers)
-
-//     // Write the address to the PCI configuration address port (0xCF8)
-//     port_byte_out(PCI_CONFIG_ADDRESS, address & 0xFF);
-//     port_byte_out(PCI_CONFIG_ADDRESS, (address >> 8) & 0xFF);
-//     port_byte_out(PCI_CONFIG_ADDRESS, (address >> 16) & 0xFF);
-//     port_byte_out(PCI_CONFIG_ADDRESS, (address >> 24) & 0xFF);
-
-//     // Read the 32-bit data from the PCI configuration data port (0xCFC)
-//     uint32_t data = 0;
-//     data |= (uint32_t)port_byte_in(PCI_CONFIG_DATA) << 0;
-//     data |= (uint32_t)port_byte_in(PCI_CONFIG_DATA) << 8;
-//     data |= (uint32_t)port_byte_in(PCI_CONFIG_DATA) << 16;
-//     data |= (uint32_t)port_byte_in(PCI_CONFIG_DATA) << 24;
-
-//     return data;
-// }
-
 #define VIRTIO_VENDOR_ID  0x1AF4
 #define VIRTIO_NET_DEVICE_ID  0x1000  // Virtio Network Device ID
 #define VIRTIO_BLOCK_DEVICE_ID  0x1001  // Virtio Block Device ID
@@ -45,31 +18,10 @@ uint32_t pci_read_config(uint8_t bus, uint8_t slot, uint8_t function, uint8_t of
     uint32_t address = PCI_ADDRESS(bus, slot, function, offset);
 
     // Write the address to the PCI Configuration Address port
-    port_byte_out(PCI_CONFIG_ADDRESS, address);
+    outb(PCI_CONFIG_ADDRESS, address);
 
     // Read the data from the PCI Configuration Data port
-    return port_byte_in(PCI_CONFIG_DATA);
-}
-
-// Function to check if the device is a Virtio device
-bool is_virtio_device(uint8_t bus, uint8_t slot, uint8_t function) {
-    uint32_t vendor_id = pci_read_config(bus, slot, function, 0);  // Vendor ID is at offset 0
-    uint32_t device_id = pci_read_config(bus, slot, function, 2);  // Device ID is at offset 2
-
-    // Check if the vendor ID is Virtio (0x1AF4) and device ID is either Virtio Network or Block device
-    if ((vendor_id & 0xFFFF) == VIRTIO_VENDOR_ID) {
-            printf("Found Virtio Device at bus %d, slot %d, function %d\n", bus, slot, function);
-        if ((device_id & 0xFFFF) == VIRTIO_NET_DEVICE_ID) {
-            printf("Found Virtio Network Device at bus %d, slot %d, function %d\n", bus, slot, function);
-            return true;
-        }
-        else if ((device_id & 0xFFFF) == VIRTIO_BLOCK_DEVICE_ID) {
-            printf("Found Virtio Block Device at bus %d, slot %d, function %d\n", bus, slot, function);
-            return true;
-        }
-    }
-
-    return false;  // Not a Virtio device
+    return inb(PCI_CONFIG_DATA);
 }
 
 bool pci_device_present(uint8_t bus, uint8_t slot, uint8_t function) {
@@ -77,21 +29,25 @@ bool pci_device_present(uint8_t bus, uint8_t slot, uint8_t function) {
     return vendor_id != 0xFFFFFFFF;  // 0xFFFFFFFF means no device
 }
 
-uint32_t *pci_map_bar(uint8_t bus, uint8_t slot, uint8_t bar_index, uint32_t size_of_mmio_region) {
-    uint32_t bar_address = pci_read_config(bus, slot, 0, 0x10 + (bar_index * 4));
+uint32_t* pci_map_bar(uint8_t bus, uint8_t slot, uint8_t function, uint8_t bar_index, uint32_t size_of_mmio_region) {
+    // BAR0 is at offset 0x10, BAR1 is at 0x14, etc.
+    uint32_t bar_address = pci_read_config(bus, slot, function, 0x10 + (bar_index * 4));
 
+    // Check if the BAR is an I/O port or memory-mapped
     if (bar_address & 0x1) {
+        // If the least significant bit is 1, it's an I/O-mapped BAR
         printf("BAR%d: I/O-mapped at 0x%x\n", bar_index, bar_address);
-        return (uint32_t *)bar_address;
+        return (uint32_t *)bar_address;  // Return the I/O address as a pointer
     } else {
-        bar_address &= ~0xF;
+        // If the least significant bit is 0, it's memory-mapped
+        bar_address &= ~0xF;  // Clear the lower 4 bits (to align the address)
 
+        // Allocate memory for the MMIO region
         uint32_t *mapped_address = (uint32_t *)malloc(size_of_mmio_region);
-
         if (mapped_address == NULL) {
+            printf("Error: Failed to allocate memory for MMIO region.\n");
             return NULL;
         }
-
         return mapped_address;
     }
 }
@@ -108,25 +64,17 @@ void pic_acknowledge_irq(uint8_t irq) {
 }
 
 void check_virtio_device(uint8_t bus, uint8_t slot, uint8_t function) {
-    uint32_t vendor_id = pci_read_config(bus, slot, function, 0);
-    uint32_t device_id = pci_read_config(bus, slot, function, 2);
-    uint32_t class_code = pci_read_config(bus, slot, function, 0x08);
+    uint32_t id = pci_read_config(bus, slot, function, 0);
+    uint32_t vendor_id = id & 0xffff;
+    uint32_t device_id = (id>>16) & 0xffff;
 
-    uint8_t base_class = (class_code >> 24) & 0xFF;
-    uint8_t sub_class  = (class_code >> 16) & 0xFF;
-    uint8_t prog_intf  = (class_code >> 8) & 0xFF;
-
-    // Print the device details
-    printf("PCI Device found at bus %d, slot %d, function %d\n", bus, slot, function);
-    printf("Vendor ID: 0x%04x, Device ID: 0x%04x\n", vendor_id & 0xFFFF, device_id & 0xFFFF);
-    printf("Class Code: 0x%06x\n", class_code);
-    printf("Base Class: 0x%02x, Sub Class: 0x%02x, Programming Interface: 0x%02x\n", base_class, sub_class, prog_intf);
-
+    // printf("Vendor ID: 0x%04x, Device ID: 0x%04x\n", vendor_id, device_id);
     // Check for Virtio Vendor ID (0x1AF4)
-    if ((vendor_id & 0xFFFF) == 0x1AF4) {
+    if (vendor_id == VIRTIO_VENDOR_ID) {
+        // Print the device details
+        printf("PCI Device found at bus %d, slot %d, function %d\n", bus, slot, function);
+        printf("Vendor ID: 0x%04x, Device ID: 0x%04x\n", vendor_id, device_id);
         printf("Virtio device found!\n");
-    } else {
-        printf("Not a Virtio device.\n");
     }
 }
 
@@ -135,12 +83,7 @@ void pci_scan() {
     for (uint8_t bus = 0; bus < 256; bus++) {
         for (uint8_t slot = 0; slot < 32; slot++) {
             for (uint8_t function = 0; function < 8; function++) {
-                if (pci_device_present(bus, slot, function)) {
-                    uint32_t vendor_id = pci_read_config(bus, slot, function, 0);
-                    uint32_t device_id = pci_read_config(bus, slot, function, 2);
-                    printf("PCI Device found at bus %d, slot %d, function %d\n", bus, slot, function);
-                    printf("Vendor ID: 0x%04x, Device ID: 0x%04x\n", vendor_id & 0xFFFF, device_id & 0xFFFF);
-                }
+                check_virtio_device(bus, slot, function);
                 if (bus == 255 && slot == 31 && function == 7) {
                     return;
                 }

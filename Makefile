@@ -3,8 +3,8 @@
 # $^ = all dependencies
 
 # detect all .o files based on their .c source
-C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c shell/*.c)
-HEADERS = $(wildcard kernel/*.h  drivers/*.h cpu/*.h shell/*.h)
+C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c shell/*.c lib/*.c)
+HEADERS = $(wildcard kernel/*.h  drivers/*.h cpu/*.h shell/*.h lib/*.h)
 OBJ_FILES = ${C_SOURCES:.c=.o cpu/interrupt.o}
 
 CC = x86_64-elf-gcc
@@ -21,7 +21,7 @@ os-image.bin: boot/mbr.bin kernel.bin
 	cat $^ > $@
 
 run: os-image.bin
-	qemu-system-i386 -device virtio-net,mac=52:54:00:12:34:56,netdev=net0 -netdev user,id=net0 -monitor telnet:127.0.0.1:4444,server,nowait -fda $<
+	qemu-system-i386 -device virtio-net,mac=52:54:00:12:34:56,netdev=net0 -netdev user,id=net0 -d trace:pci_cfg_write,trace:pci_cfg_read -monitor telnet:127.0.0.1:4444,server,nowait -fda $<
 
 echo: os-image.bin
 	xxd $<

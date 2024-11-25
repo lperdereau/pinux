@@ -1,10 +1,6 @@
 #include "net.h"
-// #include "pci.h"
-#include "../kernel/mem.h"
-#include "../kernel/print.h"
-
-
-struct net_device device;
+#include "mem.h"
+#include "print.h"
 
 int net_init(struct net_device *dev) {
     // Initialize the network device (for example, set MAC address)
@@ -43,21 +39,15 @@ void net_receive(struct net_device *dev, void *buf, size_t len) {
     printf("\n");
 }
 
-void setup_network_device() {
-    // uint8_t mac[6];
-    // get_mac_address(mac);
-    unsigned char mac[6] = {0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F};
-    printf("Address MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    // Set up the network device
-    device.name = "eth0";
-    device.init = net_init;
-    device.open = net_open;
-    device.stop = net_stop;
-    device.xmit = net_xmit;
-    device.receive = net_receive;
+void setup_network_device(struct net_device *dev) {
+    // Set up the network dev
+    dev->init = net_init;
+    dev->open = net_open;
+    dev->stop = net_stop;
+    dev->xmit = net_xmit;
+    dev->receive = net_receive;
 
-    // Initialize the device
-    device.init(&device);
-    device.open(&device);
+    // Initialize the dev
+    dev->init(dev);
+    dev->open(dev);
 }
